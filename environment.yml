@@ -1,0 +1,19 @@
+name: xagg_new
+channels:
+  - conda-forge
+dependencies:
+  - pytest
+  - jupyter
+  - jupyterlab
+  - xarray
+  - numpy
+  - scipy
+  - dask
+  - netcdf4
+  - pandas
+  - matplotlib
+  - geopandas
+  - cartopy
+  - cmocean
+  - shapely
+  - xesmf
