@@ -38,7 +38,8 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
                  'latitude_1','nav_lat','Y') are included out of the box.
     chg_bnds   -- if True (by default), the names of variables with "_bnd" in their names
                   are assumed to be dimension bound variables, and are changed as well if
-                  the rest of their name matches 'o' (for lon) or 'a' (for lat. 
+                  the rest of their name matches 'o' (for lon) or 'a' (for lat). 
+                  ## DOES THIS WORK FOR "X" and "Y"?
                   
     Returns:
     a dataset with lat/lon variables in the format necessary for this package to function
@@ -48,9 +49,9 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
     """
     
     # List of variables that represent bounds
-    if type(ds) is xr.core.dataset.Dataset:
+    if type(ds) == xr.core.dataset.Dataset:
         bnd_vars = [k for k in list(ds.keys()) if 'bnds' in k]
-    elif type(ds) is xr.core.dataarray.DataArray:
+    elif type(ds) == xr.core.dataarray.DataArray:
         bnd_vars = []
     else:
         raise TypeError('[ds] needs to be an xarray structure (Dataset or DataArray).')
@@ -71,7 +72,7 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
         if chg_bnds:
             if len(bnd_vars)>0:
                 try:
-                    ds = ds.rename({(key+'_bnds'):(value+'_bnds') for (key,value) in var_cipher[test_dims].items()})
+                    ds = ds.rename({(key+'_bnds'):(value+'_bnds') for (key,value) in var_cipher[test_dims[0]].items()})
                 except ValueError:
                     try: 
                         warnings.warn('Assuming dim '+[k for k in bnd_vars if 'o' in k][0]+' is longitude bounds and '+
@@ -91,7 +92,7 @@ def fix_ds(ds,var_cipher = {'latitude':{'latitude':'lat','longitude':'lon'},
     # Do the same for a longitude bound, if present (the check for dataset is to 
     # avoid an error for .keys() for a dataarray; it seems like a good assumption 
     # that you're not running a dataarray of just lon_bnds through this). 
-    if (type(ds) is xr.core.dataset.Dataset):
+    if (type(ds) == xr.core.dataset.Dataset):
         # Three if statements because of what I believe to be a jupyter error
         # (where all three statements are evaluated instead of one at a time)
         if ('lon_bnds' in ds.keys()):
@@ -115,7 +116,7 @@ def get_bnds(ds,
     """ Builds vectors of lat/lon bounds if not present in [ds]
     
     Assumes a regular rectangular grid - so each lat/lon bound
-    is 0.5 over to the next pixel.
+    is 0.5*(gap between pixels) over to the next pixel.
     
     Note:
     Run this after [fix_lons], otherwise the dimension / variable
@@ -174,7 +175,7 @@ def get_bnds(ds,
             # Fill in last missing band before edge cases (the inner band of the 
             # first pixel, which is just equal to the next edge)
             bnds_tmp[0,1] = bnds_tmp[1,0]
-
+            #print(bnds_tmp)
             # Now deal with edge cases; basically either use the diff from the last
             # interval between pixels, or max out at 90. 
             if ds[var].diff(var)[0]>0:
@@ -183,9 +184,10 @@ def get_bnds(ds,
             else:
                 bnds_tmp[0,0] = np.min([edges[var][1],ds[var][0].values+0.5*(ds[var][1]-ds[var][0]).values])
                 bnds_tmp[-1,1] = np.max([edges[var][0],ds[var][-1].values-0.5*(ds[var][-1]-ds[var][-2]).values])
+            #print(bnds_tmp)
 
             # Fix crossing-over-360 issues in the lon
-            if var is 'lon':
+            if var == 'lon':
                 # To be robust to partial grids; setting the rolled over edges equal to
                 # each other if one of the edges is the -180/180 and the other one isn't, 
                 # but 'close enough' (within 5 degrees + warning)
@@ -273,3 +275,4 @@ def subset_find(ds0,ds1):
         ds0 = ds0.unstack()
         
     return ds0
+

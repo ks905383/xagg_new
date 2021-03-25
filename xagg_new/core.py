@@ -46,17 +46,17 @@ def process_weights(ds,weights=None,target='ds'):
 
         # Regrid, if necessary (do nothing if the grids match up to within
         # floating-point precision)
-        if ((not ((ds.sizes['lat'] is weights.sizes['lat']) & (ds.sizes['lon'] is weights.sizes['lon']))) or 
+        if ((not ((ds.sizes['lat'] is weights.sizes['lat']) & (ds.sizes['lon'] == weights.sizes['lon']))) or 
             (not (np.allclose(ds.lat,weights.lat) & np.allclose(ds.lon,weights.lon)))):
-            if target is 'ds':
+            if target == 'ds':
                 print('regridding weights to data grid...')
                 # Create regridder to the [ds] coordinates
                 rgrd = xe.Regridder(weights,ds,'bilinear')
                 # Regrid [weights] to [ds] grids
                 weights = rgrd(weights)
 
-            elif target is 'weights':
-                raise KeyError('The '+target+' variable is not *yet* supported as a target for regridding. Please choose "ds" for now.')
+            elif target == 'weights':
+                raise NotImplementedError('The '+target+' variable is not *yet* supported as a target for regridding. Please choose "ds" for now.')
                 print('regridding data to weights grid...')
                 # Create regridder to the [weights] coordinates
                 rgrd = xe.Regridder(ds,weights,'bilinear')
@@ -121,7 +121,7 @@ def create_raster_polygons(ds,
     #breakpoint()
     # Subset by shapefile bounding box, if desired
     if subset_bbox is not None:
-        if type(subset_bbox) is gpd.geodataframe.GeoDataFrame:
+        if type(subset_bbox) == gpd.geodataframe.GeoDataFrame:
             # Using the biggest difference in lat/lon to make sure that the pixels are subset
             # in a way that the bounding box is fully filled out
             bbox_thresh = np.max([ds.lat.diff('lat').max(),ds.lon.diff('lon').max()])+0.1
@@ -135,7 +135,7 @@ def create_raster_polygons(ds,
             
     # Mask
     if mask is not None:
-        warnings.warn('Masking by grid not yet supported. Stay tuned...')
+        raise NotImplementedError('Masking by grid not yet supported. Stay tuned...')
         
     # Create dataset which has a lat/lon bound value for each individual pixel, 
     # broadcasted out over each lat/lon pair
@@ -350,7 +350,7 @@ def aggregate(ds,wm):
     ds = subset_find(ds,wm.source_grid)
     
     # Set weights; or replace with ones if no additional weight information
-    if wm.weights is not 'nowghts':
+    if wm.weights != 'nowghts':
         weights = np.array([float(k) for k in wm.weights])
     else:
         weights = np.ones((len(wm.source_grid['lat'])))

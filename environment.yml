@@ -11,6 +11,7 @@ dependencies:
   - dask
   - netcdf4
   - pandas
+  - geopandas
   - matplotlib
   - geopandas
   - cartopy
