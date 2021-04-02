@@ -13,7 +13,6 @@ dependencies:
   - pandas
   - geopandas
   - matplotlib
-  - geopandas
   - cartopy
   - cmocean
   - shapely
