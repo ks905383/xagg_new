@@ -11,7 +11,7 @@ dependencies:
   - netcdf4
   - geopandas
   - shapely
-  - xesmf
+  - xesmf >= 0.5.2
   - matplotlib
   - cartopy
   - cmocean

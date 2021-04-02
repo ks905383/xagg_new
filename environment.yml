@@ -16,4 +16,4 @@ dependencies:
   - cartopy
   - cmocean
   - shapely
-  - xesmf
+  - xesmf >= 0.5.2
