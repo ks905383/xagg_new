@@ -57,6 +57,7 @@ def process_weights(ds,weights=None,target='ds'):
 
             elif target == 'weights':
                 raise NotImplementedError('The '+target+' variable is not *yet* supported as a target for regridding. Please choose "ds" for now.')
+                # This is because of lack of downstream capability right now... 
                 print('regridding data to weights grid...')
                 # Create regridder to the [weights] coordinates
                 rgrd = xe.Regridder(ds,weights,'bilinear')
@@ -99,9 +100,15 @@ def create_raster_polygons(ds,
     # of ocean pixels or something... 
           
     Returns:
-    a geopandas geodataframe containing a 'geometry' 
-    giving the pixel boundaries for each 'lat' / 'lon' 
-    pair
+    a dictionary containing:
+    - "gdf_pixels": a geopandas geodataframe containing a 
+                    'geometry' giving the pixel boundaries 
+                    for each 'lat' / 'lon' pair
+    - "source_grid": a dictionary containing the original
+                     lat and lon inputs under the keys
+                     "lat" and "lon" (just the 
+                     xr.DataArrays of those variables in
+                     the input ds)
                   
     Note: 
     'lat_bnds' and 'lon_bnds' can be created through the
@@ -183,8 +190,8 @@ def create_raster_polygons(ds,
     gdf_pixels['pix_idx'] = gdf_pixels.index.values
     
     # Add crs (normal lat/lon onto WGS84)
-    #gdf_pixels = gdf_pixels.set_crs("EPSG:4326")
-    gdf_pixels.crs = {'init':'EPSG:4326'}
+    gdf_pixels = gdf_pixels.set_crs("EPSG:4326")
+    #gdf_pixels.crs = {'init':'EPSG:4326'}
     
     # Save the source grid for further reference
     source_grid = {'lat':ds_bnds.lat,'lon':ds_bnds.lon}
@@ -247,20 +254,22 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     # (using the EASE grid https://nsidc.org/data/ease)
     if np.all(gdf_in.total_bounds[[1,3]]>0):
         # If min/max lat are both in NH, use North grid
-        epsg_set = {'init':'EPSG:6931'}
+        #epsg_set = {'init':'EPSG:6931'} (change to below bc of depreciation of {'init':...} format in geopandas)
+        epsg_set = 'EPSG:6931'
     elif np.all(gdf_in.total_bounds[[1,3]]<0):
         # If min/max lat are both in SH, use South grid
-        epsg_set = {'init':'EPSG:6932'}
+        #epsg_set = {'init':'EPSG:6932'}
+        epsg_set = 'EPSG:6932'
     else:
         # Otherwise, use the global/temperate grid
-        epsg_set = {'init':'EPSG:6933'}
+        #epsg_set = {'init':'EPSG:6933'}
+        epsg_set = 'EPSG:6933'
     
     overlaps = gpd.overlay(gdf_in.to_crs(epsg_set),
                            pix_agg['gdf_pixels'].to_crs(epsg_set),
                            how='intersection')
     
     # Now, group by poly_idx (each polygon in the shapefile)
-    #(check if poly_idx exists in gdf_in first?)
     ov_groups = overlaps.groupby('poly_idx')
     
     # Calculate relative area of each overlap (so how much of the total 
@@ -295,10 +304,6 @@ def get_pixel_overlaps(gdf_in,pix_agg):
     
     if 'weights' in pix_agg['gdf_pixels'].columns:
         wm_out.weights = pix_agg['gdf_pixels'].weights
-    
-    # Really, gdf_out should be its own class, with poly_idx, rel_area, 
-    # pix_idxs, and coords required; and the rest of the information the 
-    # stuff you keep
     
     return wm_out
 
@@ -350,9 +355,14 @@ def aggregate(ds,wm):
     ds = subset_find(ds,wm.source_grid)
     
     # Set weights; or replace with ones if no additional weight information
-    if wm.weights != 'nowghts':
+    #if wm.weights != 'nowghts':
+    if type(wm.weights) == pd.core.series.Series:
         weights = np.array([float(k) for k in wm.weights])
     else:
+        if wm.weights != 'nowghts':
+            warnings.warn('wm.weights is: \n '+print(wm.weights)+
+                            ', \n which is not a supported weight vector (in a pandas series) '+
+                            'or "nowghts" as a string. Assuming no weights are included...')
         weights = np.ones((len(wm.source_grid['lat'])))
     
     for var in ds.var():
