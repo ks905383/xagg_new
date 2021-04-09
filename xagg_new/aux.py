@@ -4,8 +4,26 @@ import pandas as pd
 import warnings
 
 
-def normalize(a):
-    if (np.all(~np.isnan(a))) & (a.sum()>0):
+def normalize(a,drop_na = False):
+    """ Normalizes the vector a
+
+    If drop_na = True, and there are nans in the vector a, then the normalization
+    is calculated using only the non-nan locations in a, and the vector is returned
+    with the nans in their original location. 
+    In other words, np.nansum(normalize(a),drop_na=True) == 1.0
+
+    If drop_na = False, and nans are present in a, then normalize just returns a 
+    vector of np.nan the same length of a.
+    """
+    
+    if (drop_na) & (np.any(np.isnan(a))):
+        a2 = a[~np.isnan(a)]
+        a2 = a2/a2.sum()
+        a[~np.isnan(a)] = a2
+
+        return a
+
+    elif (np.all(~np.isnan(a))) & (a.sum()>0):
         return a/a.sum()
     else:
         return a*np.nan

@@ -392,3 +392,9 @@ def test_aggregate_with_mismatched_grid():
 
 # Should probably test multiple polygons just to be sure... 
 
+
+### NEED A TEST FOR NAN BEHAVIOR
+# 1) That if a region is covered by pixels that are entirely nans, that it spits out only nans
+# 2) That if a region is covered *partially* by pixels that are nans, that those are ignored 
+# in the aggregation calculation
+

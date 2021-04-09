@@ -347,6 +347,8 @@ def aggregate(ds,wm):
     An xa.aggregated object with the aggregated variables 
     
     """
+    # Run ds through fix_ds (to fix lat/lon names, lon coords)
+    ds = fix_ds(ds)
 
     # Stack 
     ds = ds.stack(loc=('lat','lon'))
@@ -377,12 +379,46 @@ def aggregate(ds,wm):
             for poly_idx in wm.agg.poly_idx:
                 # Get average value of variable over the polygon; weighted by 
                 # how much of the pixel area is in the polygon, and by (optionally)
-                # a separate gridded weight
-                if wm.agg.iloc[poly_idx,:].pix_idxs is not np.nan:
-                    wm.agg.loc[poly_idx,var] = [[((ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)*
-                                                           normalize(np.squeeze(wm.agg.iloc[poly_idx,:].rel_area)*
-                                                             weights[wm.agg.iloc[poly_idx,:].pix_idxs])).
-                                                          sum('loc')).values]]
+                # a separate gridded weight. This if statement checks 
+                # - if the weights output for this polygon is just "np.nan", which 
+                #   indicates there's no overlap between the pixel grid and polygons
+                # - [this has been pushed down a few lines] or, if all the pixels in 
+                #   the grid have just nan values for this variable
+                # in both cases; the "aggregated variable" is just a vector of nans. 
+                if not np.isnan(wm.agg.iloc[poly_idx,:].pix_idxs).all():
+                    # Get the dimensions of the variable that aren't "loc" (location)
+                    other_dims = [k for k in np.atleast_1d(ds[var].dims) if k != 'loc']
+                    # Check first if any nans are "complete" (meaning that a pixel 
+                    # either has values for each step, or nans for each step - if
+                    # there are random nans within a pixel, throw a warning)
+                    if not xr.Dataset.equals(np.isnan(ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)).any(other_dims),
+                                             np.isnan(ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)).all(other_dims)):
+                        warnings.warn('One or more of the pixels in variable '+var+' have nans in them in the dimensions '+
+                                      ', '.join([k for k in ds[var].dims if k != 'loc'])+
+                                      '. The code can currently only deal with pixels for which the '+
+                                      '*entire* pixel has nan values in all dimensions, however there is currently no '+
+                                      ' support for data in which pixels have only some nan values. The aggregation '+
+                                      'calculation is likely incorrect.')
+
+                    if not np.isnan(ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)).all(): 
+                        # Get relative areas for the pixels overlapping with this Polygon
+                        tmp_areas = np.squeeze(wm.agg.iloc[poly_idx,:].rel_area)
+                        # Replace overlapping pixel areas with nans if the corresponding pixel
+                        # is only composed of nans
+                        tmp_areas[np.array(np.isnan(ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)).all(other_dims).values)] = np.nan
+                        # Calculate the normalized area+weight of each pixel (taking into account
+                        # nans)
+                        normed_areaweights = normalize(tmp_areas*weights[wm.agg.iloc[poly_idx,:].pix_idxs],drop_na=True)
+
+                        # Take the weighted average of all the pixel values to calculate the 
+                        # aggregated value for the shapefile
+                        wm.agg.loc[poly_idx,var] = [[((ds[var].isel(loc=wm.agg.iloc[poly_idx,:].pix_idxs)*
+                                                        normed_areaweights).
+                                                       sum('loc')).values]]
+
+                    else:
+                        wm.agg.loc[poly_idx,var] = [[(ds[var].isel(loc=0)*np.nan).values]]
+
                 else:
                     #breakpoint()
                     #wm.agg.loc[poly_idx,var] = [[np.array(np.nan)]]
