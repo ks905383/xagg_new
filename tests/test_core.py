@@ -386,7 +386,7 @@ def test_aggregate_with_mismatched_grid():
 	# Get aggregate
 	agg = aggregate(ds,wm)
 
-	# On change in rtol, see note in test_aggregate_with_weights
+	# On change in rtol, see note in test_aggregate_basic
 	assert np.allclose([v for v in agg.agg.test.values],1.4999,rtol=1e-4)
 
 
@@ -397,4 +397,65 @@ def test_aggregate_with_mismatched_grid():
 # 1) That if a region is covered by pixels that are entirely nans, that it spits out only nans
 # 2) That if a region is covered *partially* by pixels that are nans, that those are ignored 
 # in the aggregation calculation
+def test_aggregate_with_all_nans():
+	ds = xr.Dataset({'test':(['lon','lat'],np.array([[np.nan,np.nan],[np.nan,np.nan]])),
+					 'lat_bnds':(['lat','bnds'],np.array([[-0.5,0.5],[0.5,1.5]])),
+					 'lon_bnds':(['lon','bnds'],np.array([[-0.5,0.5],[0.5,1.5]]))},
+					coords={'lat':(['lat'],np.array([0,1])),
+							'lon':(['lon'],np.array([0,1])),
+							'bnds':(['bnds'],np.array([0,1]))})
+
+	# get aggregation mapping
+	pix_agg = create_raster_polygons(ds)
+
+	# Create polygon covering multiple pixels
+	gdf = {'name':['test'],
+				'geometry':[Polygon([(0,0),(0,1),(1,1),(1,0),(0,0)])]}
+	gdf = gpd.GeoDataFrame(gdf,crs="EPSG:4326")
+
+
+	# Get pixel overlaps
+	wm = get_pixel_overlaps(gdf,pix_agg)
+
+	# Get aggregate
+	agg = aggregate(ds,wm)
+
+	# Should only return nan 
+	# (this is not a great assert - but agg.agg.test[0] comes out as [array(nan)], 
+	# which... I'm not entirely sure how to reproduce. It quaks like a single nan,
+	# but it's unclear to me how to get it to work)
+	assert np.all([np.isnan(k) for k in agg.agg.test])
+
+def test_aggregate_with_some_nans():
+	ds = xr.Dataset({'test':(['lon','lat'],np.array([[np.nan,1],[2,np.nan]])),
+					 'lat_bnds':(['lat','bnds'],np.array([[-0.5,0.5],[0.5,1.5]])),
+					 'lon_bnds':(['lon','bnds'],np.array([[-0.5,0.5],[0.5,1.5]]))},
+					coords={'lat':(['lat'],np.array([0,1])),
+							'lon':(['lon'],np.array([0,1])),
+							'bnds':(['bnds'],np.array([0,1]))})
+
+	# get aggregation mapping
+	pix_agg = create_raster_polygons(ds)
+
+	# Create polygon covering multiple pixels
+	gdf = {'name':['test'],
+				'geometry':[Polygon([(0,0),(0,1),(1,1),(1,0),(0,0)])]}
+	gdf = gpd.GeoDataFrame(gdf,crs="EPSG:4326")
+
+
+	# Get pixel overlaps
+	wm = get_pixel_overlaps(gdf,pix_agg)
+
+	# Get aggregate
+	agg = aggregate(ds,wm)
+
+	# Should be 1.5; with one pixel valued 1, one pixel valued 2. 
+	assert np.allclose([agg.agg.test[0]],1.5,rtol=1e-4)
+
+
+
+
+
+
+
 
