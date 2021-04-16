@@ -77,12 +77,6 @@ Area-weighting of pixels onto polygons ensures that aggregating weather and clim
 
 `xagg` allows a simple population *and* area-averaging, in addition to export functions that will turn the aggregated data into output easily used in STATA or R for further calculations. 
 
-## Left to do
-- Testing, bug fixes, stability checks, etc.
-- Share widely! I hope this will be helpful to a wide group of natural and social scientists who have to work with both gridded and polygon data!
-
-
-
 
 
 <p><small>Project based on the <a target="_blank" href="https://github.com/jbusecke/cookiecutter-science-project">cookiecutter science project template</a>.</small></p>
