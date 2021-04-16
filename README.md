@@ -1,4 +1,4 @@
-xagg_new
+xagg
 ==============================
 [![Build Status](https://github.com/ks905383/xagg_new/workflows/Tests/badge.svg)](https://github.com/ks905383/xagg_new/actions)
 [![codecov](https://codecov.io/gh/ks905383/xagg_new/branch/master/graph/badge.svg)](https://codecov.io/gh/ks905383/xagg_new)
