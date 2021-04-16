@@ -25,7 +25,7 @@ import xagg_new  # isort:skip
 
 # -- Project information -----------------------------------------------------
 
-project = "xagg"
+project = "xagg_new"
 copyright = "2021, Kevin Schwarzwald"
 author = "Kevin Schwarzwald"
 
@@ -34,7 +34,7 @@ author = "Kevin Schwarzwald"
 # built documents.
 # see https://pypi.org/project/setuptools-scm/ for details
 from pkg_resources import get_distribution
-release = get_distribution('xagg').version
+release = get_distribution('xagg_new').version
 # for example take major/minor
 version = '.'.join(release.split('.')[:2])
 
