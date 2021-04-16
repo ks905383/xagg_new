@@ -10,13 +10,13 @@ A package to aggregate gridded data in ``xarray`` to polygons in ``geopandas`` u
 
 The simplest code run, involving raster data in an ``xarray`` Dataset ``ds`` and polygons in a ``geopandas`` GeoDataFrame ``gpd``, is::
 
-	import xagg as xa
+ import xagg as xa
     
-	# Get overlap between pixels and polygons
-	weightmap = xa.pixel_overlaps(ds,gdf)
+ # Get overlap between pixels and polygons
+ weightmap = xa.pixel_overlaps(ds,gdf)
 
-   # Aggregate data in [ds] onto polygons
-   aggregated = xa.aggregate(ds,weightmap)
+ # Aggregate data in [ds] onto polygons
+ aggregated = xa.aggregate(ds,weightmap)
 
 
 ``aggregated`` can then be turned into an ``xarray`` Dataset, a ``geopandas`` GeoDataFrame, or directly exported to a CSV (for use in, e.g., STATA), NetCDF, or Shapefile.
