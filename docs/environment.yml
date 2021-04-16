@@ -1,20 +1,5 @@
-name: xagg_new
+name: xagg_new_docs
 channels:
   - conda-forge
 dependencies:
-  - pytest
-  - jupyter
-  - jupyterlab
-  - xarray
   - numpy
-  - scipy
-  - dask
-  - netcdf4
-  - pandas
-  - geopandas
-  - matplotlib
-  - cartopy
-  - cmocean
-  - shapely
-  - xesmf >= 0.5.2
-  - cf_xarray # separately, to ensure latest version
